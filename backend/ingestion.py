@@ -23,7 +23,7 @@ class RepoImpactService:
     def _pull_files_url(self, pull_number: int) -> str:
         return f"https://api.github.com/repos/{self.owner}/{self.repo}/pulls/{pull_number}/files"
 
-    def fetch_recent_merged_prs(self, days: int = 90, max_prs: int = 250) -> List[PREntry]:
+    def fetch_recent_merged_prs(self, days: int = 90, max_prs: int = 100) -> List[PREntry]:
         since = datetime.now(timezone.utc) - timedelta(days=days)
         results: List[PREntry] = []
 

@@ -121,7 +121,9 @@ def extract_pr_features(pr: PREntry) -> Dict[str, Any]:
     keyword_signal = keyword_score(pr.title)
 
     reliability_signal = 0.0
-    if any(token in normalize_title(pr.title) for token in ["fix", "retry", "validation", "error", "oauth", "perf", "race", "cache"]):
+    normalized_title = normalize_title(pr.title)
+
+    if any(token in normalized_title for token in ["fix", "retry", "validation", "error", "oauth", "perf", "race", "cache"]):
         reliability_signal += 1.8
     if any(is_test_file(name) for name in pr.files):
         reliability_signal += 0.7
@@ -136,7 +138,12 @@ def extract_pr_features(pr: PREntry) -> Dict[str, Any]:
     if any(area in area_counts for area in ["infra", "platform", "systems", "shared-libraries"]):
         leverage_signal += 1.0
 
-    ownership_signal = 1.0 + (area_counts.most_common(1)[0][1] / max(len(pr.files), 1)) * 1.5
+    if pr.files and area_counts:
+        dominant_count = area_counts.most_common(1)[0][1]
+        ownership_signal = 1.0 + (dominant_count / len(pr.files)) * 1.5
+    else:
+        ownership_signal = 1.0
+
     product_signal = 1.0 + min(len([a for a in area_counts if a not in {"docs", "tooling"}]), 4) * 0.5
 
     pr_impact = (
@@ -159,6 +166,7 @@ def extract_pr_features(pr: PREntry) -> Dict[str, Any]:
         "ownership_signal": ownership_signal,
         "product_signal": product_signal,
     }
+    
 
 
 def summarize_engineers(prs: Iterable[PREntry], top_n: int = 5) -> List[Dict[str, Any]]:
